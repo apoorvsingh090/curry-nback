@@ -320,7 +320,13 @@ export default function GameScreen() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               transition={{ duration: 0.16 }}
-              className="flex aspect-square min-h-[240px] min-w-[240px] w-[min(78vw,320px)] flex-col items-center justify-center rounded-[2rem] border-2 border-line bg-surface shadow-card"
+              className={[
+                "flex aspect-square min-h-[240px] min-w-[240px] w-[min(78vw,320px)]",
+                "flex-col items-center justify-center rounded-[2rem] border-2 shadow-card",
+                feedback?.kind === "good"
+                  ? "border-success bg-success-soft"
+                  : "border-line bg-surface",
+              ].join(" ")}
             >
               <span
                 aria-hidden="true"
@@ -361,8 +367,8 @@ export default function GameScreen() {
               transition={{ duration: 0.15 }}
               className={`absolute top-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full px-8 py-3 text-[1.5rem] font-bold shadow-card ${
                 feedback.kind === "good"
-                  ? "bg-success-soft text-success"
-                  : "bg-white text-ink"
+                  ? "animate-pulse-good bg-success-soft text-success"
+                  : "animate-shake-soft bg-white text-ink"
               }`}
             >
               <span>{feedback.text}</span>
