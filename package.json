@@ -6,21 +6,37 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "audit:contrast": "node scripts/check-contrast.mjs",
+    "audit:ux": "node scripts/check-ux.mjs",
+    "audit": "npm run audit:contrast && npm run audit:ux && npm run lint && npm run typecheck && npm run test",
+    "gen:assets": "node scripts/generate-icons.mjs && node scripts/generate-audio.mjs"
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "framer-motion": "^14.4.0",
+    "howler": "^2.2.4",
+    "idb": "^8.0.4",
+    "jspdf": "^4.2.1",
+    "next": "14.2.33",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.2.33"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
+    "@types/howler": "^2.2.13",
+    "@types/node": "^24.19.2",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.33",
+    "playwright": "^1.64.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.33"
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   }
 }
