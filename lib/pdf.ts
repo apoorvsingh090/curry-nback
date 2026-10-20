@@ -138,10 +138,10 @@ export async function downloadProgressReport(
 
   const columns = [
     { title: "Date", x: margin },
-    { title: "Level", x: margin + 150 },
-    { title: "Brain Score", x: margin + 260 },
-    { title: "Accuracy", x: margin + 370 },
-    { title: "Matches", x: margin + 470 },
+    { title: "Level", x: margin + 140 },
+    { title: "Brain Score", x: margin + 245 },
+    { title: "Accuracy", x: margin + 340 },
+    { title: "Matches", x: margin + 430 },
   ];
 
   doc.setFont("helvetica", "bold");
@@ -170,12 +170,12 @@ export async function downloadProgressReport(
     doc.text(formatDateTime(session.startedAt), margin, cursorY);
     doc.text(
       `${DIFFICULTIES[session.mode].label} (${session.n}-back)`,
-      margin + 150,
+      margin + 140,
       cursorY
     );
-    doc.text(String(session.brainScore), margin + 260, cursorY);
-    doc.text(`${Math.round(session.accuracy * 100)}%`, margin + 370, cursorY);
-    doc.text(String(session.matchesCaught), margin + 470, cursorY);
+    doc.text(String(session.brainScore), margin + 245, cursorY);
+    doc.text(`${Math.round(session.accuracy * 100)}%`, margin + 340, cursorY);
+    doc.text(String(session.matchesCaught), margin + 430, cursorY);
     doc.setDrawColor(227, 213, 196);
     doc.line(margin, cursorY + 8, margin + contentWidth, cursorY + 8);
     cursorY += 24;

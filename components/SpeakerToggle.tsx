@@ -15,7 +15,11 @@ export default function SpeakerToggle() {
       type="button"
       onClick={toggleVoice}
       aria-pressed={voiceEnabled}
-      aria-label={voiceEnabled ? "Turn voice narration off" : "Turn voice narration on"}
+      aria-label={
+        voiceEnabled
+          ? "Voice on. Turn voice narration off"
+          : "Voice off. Turn voice narration on"
+      }
       className="inline-flex min-h-[64px] min-w-[64px] items-center gap-2 rounded-full border-2 border-brand bg-surface px-5 text-ink transition-colors hover:bg-brand-soft active:bg-brand-soft"
     >
       <span aria-hidden="true" className="text-2xl leading-none">

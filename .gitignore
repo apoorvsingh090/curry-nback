@@ -13,3 +13,5 @@ screenshots/
 # Local env
 .env*.local
 .DS_Store
+
+lighthouse*.json

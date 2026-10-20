@@ -6,7 +6,7 @@
  * Run with: node scripts/smoke-test.mjs [baseUrl]
  */
 import { chromium } from "playwright";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -157,6 +157,33 @@ check(
   await page.getByRole("button", { name: /Download PDF report/i }).isVisible()
 );
 await page.screenshot({ path: join(SHOTS, "05-dashboard.png"), fullPage: true });
+
+/* ------------------------------------------------------- PDF export ------ */
+const downloadPromise = page.waitForEvent("download", { timeout: 30000 });
+await page.getByRole("button", { name: /Download PDF report/i }).click();
+let pdfName = "";
+try {
+  const download = await downloadPromise;
+  pdfName = download.suggestedFilename();
+  const pdfPath = join(SHOTS, "report.pdf");
+  await download.saveAs(pdfPath);
+  const { size } = statSync(pdfPath);
+  check("the PDF report downloads", pdfName.endsWith(".pdf") && size > 2000, `(${pdfName}, ${size} bytes)`);
+} catch (error) {
+  check("the PDF report downloads", false, `(${String(error).slice(0, 80)})`);
+}
+
+/* --------------------------------------------------------- offline ------- */
+await context.setOffline(true);
+let offlineOk = false;
+try {
+  await page.goto(baseUrl, { waitUntil: "domcontentloaded", timeout: 20000 });
+  offlineOk = (await page.getByRole("heading", { name: "Curry Kitchen" }).isVisible());
+} catch {
+  offlineOk = false;
+}
+check("the app still loads with the network off", offlineOk);
+await context.setOffline(false);
 
 /* --------------------------------------------------------- console ------ */
 check(

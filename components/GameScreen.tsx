@@ -19,6 +19,7 @@ import {
   resolveTrial,
 } from "@/lib/scoring";
 import { ADAPTIVE_WINDOW, applyAdaptiveStep } from "@/lib/adaptive";
+import { isModeUnlocked } from "@/lib/progression";
 import { saveSession } from "@/lib/db";
 import { playSfx, speak } from "@/lib/audio";
 import { useLastSession, useSettings } from "@/lib/store";
@@ -122,6 +123,12 @@ export default function GameScreen() {
     if (startedRef.current) return;
     startedRef.current = true;
 
+    // A locked difficulty can still be reached through a hand-typed URL.
+    if (!isModeUnlocked(mode, useSettings.getState().unlockedMode)) {
+      router.replace("/");
+      return;
+    }
+
     const timers: number[] = [];
     timersRef.current = timers;
 
@@ -160,6 +167,15 @@ export default function GameScreen() {
         await saveSession(session);
       } catch {
         /* Storage failures must not block the summary screen. */
+      }
+
+      // Unlock the next difficulty if this round qualified for it.
+      try {
+        const { getAllSessions } = await import("@/lib/db");
+        const all = await getAllSessions();
+        useSettings.getState().syncUnlocks(all);
+      } catch {
+        /* Unlocking is a progressive enhancement. */
       }
 
       timers.push(
@@ -270,7 +286,10 @@ export default function GameScreen() {
       <header className="shrink-0">
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 px-5 py-3">
           <div>
-            <p className="text-[1.25rem] font-bold leading-tight text-ink">
+            <p
+              data-testid="trial-counter"
+              className="text-[1.25rem] font-bold leading-tight text-ink"
+            >
               Card {Math.min(trialIndex + 1, TRIALS_PER_SESSION)} of{" "}
               {TRIALS_PER_SESSION}
             </p>
@@ -303,10 +322,17 @@ export default function GameScreen() {
               transition={{ duration: 0.16 }}
               className="flex aspect-square min-h-[240px] min-w-[240px] w-[min(78vw,320px)] flex-col items-center justify-center rounded-[2rem] border-2 border-line bg-surface shadow-card"
             >
-              <span aria-hidden="true" className="text-[7rem] leading-none">
+              <span
+                aria-hidden="true"
+                data-testid="ingredient-emoji"
+                className="text-[7rem] leading-none"
+              >
                 {card.emoji}
               </span>
-              <p className="mt-2 text-[2rem] font-bold leading-tight text-ink">
+              <p
+                data-testid="ingredient-label"
+                className="mt-2 text-[2rem] font-bold leading-tight text-ink"
+              >
                 {card.label}
               </p>
             </motion.div>

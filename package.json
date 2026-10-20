@@ -13,7 +13,10 @@
     "audit:contrast": "node scripts/check-contrast.mjs",
     "audit:ux": "node scripts/check-ux.mjs",
     "audit": "npm run audit:contrast && npm run audit:ux && npm run lint && npm run typecheck && npm run test",
-    "gen:assets": "node scripts/generate-icons.mjs && node scripts/generate-audio.mjs"
+    "gen:assets": "node scripts/generate-icons.mjs && node scripts/generate-audio.mjs",
+    "smoke": "node scripts/smoke-test.mjs",
+    "check:adaptive": "node scripts/adaptive-check.mjs",
+    "seed:sessions": "node scripts/seed-sessions.mjs"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -33,6 +36,7 @@
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.33",
+    "lighthouse": "^11.7.1",
     "playwright": "^1.64.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",

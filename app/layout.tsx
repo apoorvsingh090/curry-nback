@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible } from "next/font/google";
+import AppleStartupImages from "@/components/AppleStartupImages";
 import "./globals.css";
 
 const atkinson = Atkinson_Hyperlegible({
@@ -26,7 +27,6 @@ export const viewport: Viewport = {
   themeColor: "#9A3412",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover",
 };
 
@@ -37,7 +37,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={atkinson.variable}>
-      <body className="bg-cream text-ink antialiased">{children}</body>
+      <body className="bg-cream text-ink antialiased">
+        <AppleStartupImages />
+        {children}
+      </body>
     </html>
   );
 }

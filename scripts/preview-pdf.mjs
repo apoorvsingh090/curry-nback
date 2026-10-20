@@ -1,0 +1,13 @@
+﻿import { chromium } from "playwright";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { existsSync } from "node:fs";
+const cache = join(homedir(), "AppData", "Local", "ms-playwright");
+const exe = ["chromium-1243/chrome-win64/chrome.exe","chromium-1234/chrome-win64/chrome.exe"].map(p=>join(cache,p)).find(existsSync);
+const browser = await chromium.launch({ executablePath: exe, args: ["--no-sandbox"] });
+const page = await browser.newPage({ viewport: { width: 900, height: 1200 } });
+await page.goto("file:///C:/Users/Apoorv/curry-nback/screenshots/report.pdf", { waitUntil: "load" });
+await page.waitForTimeout(4000);
+await page.screenshot({ path: "screenshots/07-pdf-report.png", fullPage: false });
+await browser.close();
+console.log("ok");
