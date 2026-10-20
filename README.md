@@ -190,14 +190,40 @@ CHROME_PATH=<path to chrome> npx lighthouse http://localhost:3000 \
 ## Deployment
 
 The app is a static Next.js build with no backend, so it deploys to Vercel
-with no environment variables:
+with no environment variables.
+
+**Repository:** <https://github.com/apoorvsingh090/curry-nback> (private)
+
+### Vercel (one-time setup)
 
 ```bash
-npx vercel --prod
+npx vercel login
+npx vercel --prod          # deploys the current branch
+npx vercel alias set <deployment-url> <your-domain>   # optional
 ```
 
-It is installable as a PWA (Android, iOS) and plays offline after the first
-load. Session data stays in the browser on the device — nothing is uploaded.
+Or connect the GitHub repository in the Vercel dashboard
+(*Add New → Project → Import*). Every push to `main` then deploys
+automatically.
+
+### Make the repository public (optional)
+
+```bash
+gh repo edit apoorvsingh090/curry-nback --visibility public
+```
+
+### After deploying
+
+- Set the production URL in the repository description and in
+  `app/layout.tsx` → `metadata.metadataBase`.
+- Verify PWA installability on a real device: open the production URL in
+  Chrome (Android) → *Install app*, or Safari (iOS) → *Share → Add to Home
+  Screen*.
+- Check the offline path: load the app once, turn the network off, reload.
+
+The app is installable as a PWA (Android, iOS) and plays offline after the
+first load. Session data stays in the browser on the device — nothing is
+uploaded.
 
 ---
 
