@@ -15,6 +15,7 @@
     "audit": "npm run audit:contrast && npm run audit:ux && npm run lint && npm run typecheck && npm run test",
     "gen:assets": "node scripts/generate-icons.mjs && node scripts/generate-audio.mjs",
     "smoke": "node scripts/smoke-test.mjs",
+    "check:ux": "node scripts/ux-check.mjs",
     "check:adaptive": "node scripts/adaptive-check.mjs",
     "seed:sessions": "node scripts/seed-sessions.mjs"
   },

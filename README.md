@@ -30,6 +30,7 @@ npm run dev            # http://localhost:3000
 | `npm run audit` | All of the above |
 | `npm run gen:assets` | Regenerate PWA icons, splash screens and sound effects |
 | `npm run smoke` | End-to-end browser test of the whole loop |
+| `npm run check:ux` | Verifies the ten senior-UX constraints in a real browser |
 | `npm run check:adaptive` | Plays a perfect 2-back round and verifies the adaptive engine |
 
 ---
@@ -161,13 +162,15 @@ npm test                  # unit tests
 npm run audit             # contrast + UX + lint + typecheck + unit tests
 npm run build && npm start
 npm run smoke             # full loop in a real browser (needs a running server)
+npm run check:ux          # the ten senior-UX constraints, in a real browser
 npm run check:adaptive    # perfect 2-back round, verifies the adaptive engine
 ```
 
 The unit tests cover the sequence generator (including the §7 acceptance
 test), the scoring table, the adaptive engine, and the unlock rules. The
 browser scripts cover the whole flow, the adaptive engine in a real session,
-the PDF export and offline play.
+the PDF export, offline play, and the ten senior-UX constraints at
+1024×768 and 390×844.
 
 ### Lighthouse (production build, Lighthouse 11)
 

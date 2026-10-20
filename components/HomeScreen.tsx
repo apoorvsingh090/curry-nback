@@ -86,13 +86,14 @@ export default function HomeScreen() {
                     className={[
                       "min-h-[88px] w-[9.5rem] rounded-2xl border-2 px-3 py-3 text-center transition-colors",
                       active
-                        ? "border-brand bg-brand text-white"
+                        ? "border-brand bg-brand-soft text-brand"
                         : "border-brand bg-surface text-ink",
                       unlocked ? "hover:bg-brand-soft" : "opacity-60",
                     ].join(" ")}
                   >
                     <span className="block text-[1.25rem] font-bold leading-tight">
                       {unlocked ? config.label : "🔒 " + config.label}
+                      {active ? " ✓" : ""}
                     </span>
                     <span
                       className={`mt-1 block text-[1rem] leading-tight ${

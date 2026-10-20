@@ -5,7 +5,9 @@ Verify in a real browser at **1024×768** (iPad landscape) and on a phone at
 
 Automated coverage: `npm run audit:ux` and `npm run audit:contrast` check the
 mechanical parts (font sizes, tap-target sizes, button spacing, colour
-contrast). The items below still need human eyes and hands.
+contrast), and `npm run check:ux` drives a real browser through constraints
+1, 2, 4, 5, 6, 7, 8 and 10 at both viewports. The items below still need
+human eyes and hands.
 
 ---
 

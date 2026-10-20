@@ -111,6 +111,8 @@ const emoji = await card.locator("span").first().innerText();
 check("the card shows an emoji ingredient", emoji.length > 0, `(got "${emoji}")`);
 await page.screenshot({ path: join(SHOTS, "03-gameplay.png") });
 
+const sessionStartedAt = Date.now();
+
 // Tap MATCH on every card that appears, so the session records a mix of
 // hits and misses and produces a realistic score.
 const deadline = Date.now() + 150000;
@@ -128,6 +130,12 @@ check("the session played through", tapped >= 10, `(tapped ${tapped} times)`);
 
 await page.waitForURL(/\/summary/, { timeout: 30000 });
 await page.waitForTimeout(600);
+const sessionSeconds = Math.round((Date.now() - sessionStartedAt) / 1000);
+check(
+  "9. a full session stays under three minutes",
+  sessionSeconds <= 180 && sessionSeconds >= 40,
+  `(took ${sessionSeconds}s)`
+);
 const brainScoreText = await page
   .getByText("Brain Score")
   .locator("xpath=following-sibling::*[1]")
