@@ -44,13 +44,18 @@ export const useSettings = create<SettingsStore>()(
 /**
  * The most recently finished session, kept in memory so the summary screen
  * can render instantly (and as a fallback if IndexedDB is unavailable).
+ * `newlyUnlocked` records a difficulty the session made available for the
+ * first time, so the summary can celebrate it once.
  */
 interface LastSessionStore {
   lastSession: Session | null;
-  setLastSession: (session: Session | null) => void;
+  newlyUnlocked: DifficultyMode | null;
+  setLastSession: (session: Session | null, newlyUnlocked?: DifficultyMode | null) => void;
 }
 
 export const useLastSession = create<LastSessionStore>()((set) => ({
   lastSession: null,
-  setLastSession: (session) => set({ lastSession: session }),
+  newlyUnlocked: null,
+  setLastSession: (session, newlyUnlocked = null) =>
+    set({ lastSession: session, newlyUnlocked: newlyUnlocked ?? null }),
 }));

@@ -19,7 +19,7 @@ import {
   resolveTrial,
 } from "@/lib/scoring";
 import { ADAPTIVE_WINDOW, applyAdaptiveStep } from "@/lib/adaptive";
-import { isModeUnlocked } from "@/lib/progression";
+import { isHigherMode, isModeUnlocked } from "@/lib/progression";
 import { saveSession } from "@/lib/db";
 import { playSfx, speak } from "@/lib/audio";
 import { useLastSession, useSettings } from "@/lib/store";
@@ -163,6 +163,9 @@ export default function GameScreen() {
       setLastSession(session);
       playSfx("complete", useSettings.getState().voiceEnabled);
 
+      const unlockedBefore = useSettings.getState().unlockedMode;
+      let newlyUnlocked: DifficultyMode | null = null;
+
       try {
         await saveSession(session);
       } catch {
@@ -174,9 +177,16 @@ export default function GameScreen() {
         const { getAllSessions } = await import("@/lib/db");
         const all = await getAllSessions();
         useSettings.getState().syncUnlocks(all);
+        const unlockedAfter = useSettings.getState().unlockedMode;
+        newlyUnlocked = isHigherMode(unlockedBefore, unlockedAfter)
+          ? unlockedAfter
+          : null;
       } catch {
         /* Unlocking is a progressive enhancement. */
       }
+
+      // The summary screen announces the new unlock exactly once.
+      setLastSession(session, newlyUnlocked);
 
       timers.push(
         window.setTimeout(() => {

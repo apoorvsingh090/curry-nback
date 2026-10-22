@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { evaluateUnlockedMode, isModeUnlocked } from "@/lib/progression";
+import {
+  evaluateUnlockedMode,
+  isHigherMode,
+  isModeUnlocked,
+} from "@/lib/progression";
 import { DIFFICULTIES, DIFFICULTY_ORDER } from "@/lib/difficulty";
 import type { DifficultyMode, Session } from "@/lib/types";
 
@@ -66,5 +70,13 @@ describe("unlock rules", () => {
 
   it("keeps the difficulty order", () => {
     expect(DIFFICULTY_ORDER).toEqual(["easy", "medium", "hard"]);
+  });
+
+  it("detects a newly unlocked difficulty", () => {
+    expect(isHigherMode("easy", "easy")).toBe(false);
+    expect(isHigherMode("easy", "medium")).toBe(true);
+    expect(isHigherMode("medium", "medium")).toBe(false);
+    expect(isHigherMode("medium", "hard")).toBe(true);
+    expect(isHigherMode("hard", "easy")).toBe(false);
   });
 });

@@ -28,3 +28,8 @@ export function isModeUnlocked(mode: DifficultyMode, unlockedMode: DifficultyMod
     DIFFICULTY_ORDER.indexOf(mode) <= DIFFICULTY_ORDER.indexOf(unlockedMode)
   );
 }
+
+/** True when `after` unlocks more than `before` (a strictly higher mode). */
+export function isHigherMode(before: DifficultyMode, after: DifficultyMode): boolean {
+  return DIFFICULTY_ORDER.indexOf(after) > DIFFICULTY_ORDER.indexOf(before);
+}

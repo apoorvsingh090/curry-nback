@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BigLinkButton, BigButton } from "@/components/BigButton";
 import SpeakerToggle from "@/components/SpeakerToggle";
-import { DIFFICULTY_ORDER, DIFFICULTIES } from "@/lib/difficulty";
+import {
+  DIFFICULTY_ORDER,
+  DIFFICULTIES,
+  UNLOCK_ACCURACY,
+  nextMode,
+} from "@/lib/difficulty";
 import { isModeUnlocked } from "@/lib/progression";
 import { useSettings } from "@/lib/store";
 import { useSessions } from "@/lib/useSessions";
@@ -31,6 +36,8 @@ export default function HomeScreen() {
   }, [unlockedMode]);
 
   const showDifficultyPicker = unlockedMode !== "easy" || sessions.length > 0;
+  const nextLocked = nextMode(unlockedMode);
+  const unlockAccuracyPercent = Math.round(UNLOCK_ACCURACY * 100);
 
   function startCooking() {
     setLastMode(selected);
@@ -106,6 +113,15 @@ export default function HomeScreen() {
                 );
               })}
             </div>
+            {nextLocked ? (
+              <p className="mt-4 text-center text-[1.25rem] leading-relaxed text-ink-soft">
+                Score {unlockAccuracyPercent}% or better on{" "}
+                <span className="font-bold text-ink">
+                  {DIFFICULTIES[unlockedMode].label}
+                </span>{" "}
+                to unlock {DIFFICULTIES[nextLocked].label}.
+              </p>
+            ) : null}
           </section>
         ) : null}
 

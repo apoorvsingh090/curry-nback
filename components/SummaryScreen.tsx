@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { BigLinkButton } from "@/components/BigButton";
 import SpeakerToggle from "@/components/SpeakerToggle";
 import { getSession } from "@/lib/db";
+import { DIFFICULTIES } from "@/lib/difficulty";
 import { useLastSession } from "@/lib/store";
 import { formatDuration } from "@/lib/utils";
 import type { Session } from "@/lib/types";
@@ -22,6 +23,7 @@ function SummaryScreen() {
 
   const [session, setSession] = useState<Session | null>(lastSession);
   const [missing, setMissing] = useState(false);
+  const newlyUnlocked = useLastSession((s) => s.newlyUnlocked);
 
   useEffect(() => {
     if (session || !id) return;
@@ -115,6 +117,17 @@ function SummaryScreen() {
             </div>
           ))}
         </div>
+
+        {newlyUnlocked && session ? (
+          <p
+            role="status"
+            className="mt-6 rounded-full bg-brand-soft px-8 py-3 text-center text-[1.25rem] font-bold text-brand"
+          >
+            <span aria-hidden="true">⭐ </span>
+            {DIFFICULTIES[newlyUnlocked].label} is unlocked — pick it on the
+            home screen
+          </p>
+        ) : null}
 
         <div className="btn-group mt-8 w-full space-y-4">
           <BigLinkButton href={`/play?mode=${session.mode}`}>
