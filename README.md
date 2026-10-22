@@ -1,8 +1,14 @@
 # Curry Kitchen
 
+[![CI](https://img.shields.io/github/actions/workflow/status/apoorvsingh090/curry-nback/ci.yml?label=CI)](https://github.com/apoorvsingh090/curry-nback/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-9A3412)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/apoorvsingh090/curry-nback)](CHANGELOG.md)
+
 A gamified **N-back working-memory trainer** for adults 65+, wrapped in a
 "curry kitchen" theme, with a caregiver dashboard that tracks cognitive
 performance over time.
+
+**Play now:** <https://curry-nback.vercel.app>
 
 > Curry Kitchen is a **training game**, not a diagnostic tool. It does not
 > detect, screen for or treat dementia. Brain Score is a game metric, not a
@@ -192,33 +198,24 @@ CHROME_PATH=<path to chrome> npx lighthouse http://localhost:3000 \
 
 ## Deployment
 
-The app is a static Next.js build with no backend, so it deploys to Vercel
-with no environment variables.
+The app is a static Next.js build with no backend, served on Vercel:
+**<https://curry-nback.vercel.app>**.
 
-**Repository:** <https://github.com/apoorvsingh090/curry-nback> (private)
+- Project: `apoorvsingh090s-projects/curry-nback`
+- The repository is GitHub-connected — every push to `main` deploys
+  automatically.
+- CI runs on every push and pull request: `npm run audit`(contrast,
+  senior-UX, lint, typecheck, unit tests) plus a production build.
 
-### Vercel (one-time setup)
-
-```bash
-npx vercel login
-npx vercel --prod          # deploys the current branch
-npx vercel alias set <deployment-url> <your-domain>   # optional
-```
-
-Or connect the GitHub repository in the Vercel dashboard
-(*Add New → Project → Import*). Every push to `main` then deploys
-automatically.
-
-### Make the repository public (optional)
+To redeploy from a chosen branch, connect the repo in the Vercel dashboard
+(*Add New → Project → Import*) or run:
 
 ```bash
-gh repo edit apoorvsingh090/curry-nback --visibility public
+npx vercel --prod
 ```
 
 ### After deploying
 
-- Set the production URL in the repository description and in
-  `app/layout.tsx` → `metadata.metadataBase`.
 - Verify PWA installability on a real device: open the production URL in
   Chrome (Android) → *Install app*, or Safari (iOS) → *Share → Add to Home
   Screen*.
@@ -227,6 +224,15 @@ gh repo edit apoorvsingh090/curry-nback --visibility public
 The app is installable as a PWA (Android, iOS) and plays offline after the
 first load. Session data stays in the browser on the device — nothing is
 uploaded.
+
+---
+
+## Contributing
+
+Bug reports and feature requests are welcome — see
+[CONTRIBUTING.md](CONTRIBUTING.md) for setup, the senior-UX constraints and
+the PR checklist. Releases and notable changes are listed in
+[CHANGELOG.md](CHANGELOG.md). Licensed under MIT — see [LICENSE](LICENSE).
 
 ---
 
