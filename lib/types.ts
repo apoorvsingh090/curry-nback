@@ -1,6 +1,16 @@
-export type DifficultyMode = "easy" | "medium" | "hard";
+/** Stable keys for the difficulty ladder: 1-back through 9-back. */
+export type DifficultyMode =
+  | "easy"
+  | "medium"
+  | "hard"
+  | "level4"
+  | "level5"
+  | "level6"
+  | "level7"
+  | "level8"
+  | "level9";
 
-export type NValue = 1 | 2 | 3;
+export type NValue = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 
 export interface Ingredient {
   id: string;

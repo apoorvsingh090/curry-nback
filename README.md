@@ -62,6 +62,16 @@ Sequence:  🍅  🧅  🍅  🥕  🧅
 | Easy | 1-back | 3000ms | 4 | always available |
 | Medium | 2-back | 2500ms | 6 | ≥ 80% accuracy on Easy |
 | Hard | 3-back | 2000ms | 8 | ≥ 80% accuracy on Medium |
+| Level 4 | 4-back | 2000ms | 8 | ≥ 80% accuracy on Hard |
+| Level 5 | 5-back | 2000ms | 8 | ≥ 80% accuracy on Level 4 |
+| Level 6 | 6-back | 2000ms | 8 | ≥ 80% accuracy on Level 5 |
+| Level 7 | 7-back | 2000ms | 8 | ≥ 80% accuracy on Level 6 |
+| Level 8 | 8-back | 2000ms | 8 | ≥ 80% accuracy on Level 7 |
+| Level 9 | 9-back | 2000ms | 8 | ≥ 80% accuracy on Level 8 |
+
+From Level 4 on, the card pace stays at 2000ms — the challenge rises with
+N, not with speed, and the adaptive engine still tunes the pace within
+every round (1200–4000ms).
 
 ### Session parameters
 

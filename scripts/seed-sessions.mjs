@@ -38,11 +38,11 @@ await page.evaluate(async (sessionCount) => {
 
   const now = Date.now();
   const day = 24 * 60 * 60 * 1000;
-  const modes = ["easy", "medium", "hard"];
+  const modes = ["easy", "medium", "hard", "level4", "level5", "level6", "level7", "level8", "level9"];
   const sessions = Array.from({ length: sessionCount }, (_, index) => {
     const accuracy = 0.55 + ((index * 7) % 40) / 100;
     const mode = modes[Math.min(modes.length - 1, Math.floor(index / 3))];
-    const n = mode === "easy" ? 1 : mode === "medium" ? 2 : 3;
+    const n = modes.indexOf(mode) + 1;
     const startedAt = now - (sessionCount - index) * day;
     return {
       id: `seed-${index}`,

@@ -4,7 +4,11 @@ import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BigButton } from "@/components/BigButton";
 import SpeakerToggle from "@/components/SpeakerToggle";
-import { DIFFICULTIES } from "@/lib/difficulty";
+import {
+  DIFFICULTIES,
+  DIFFICULTY_ORDER,
+  numberWord,
+} from "@/lib/difficulty";
 import { speak } from "@/lib/audio";
 import { useSettings } from "@/lib/store";
 import type { DifficultyMode } from "@/lib/types";
@@ -16,8 +20,9 @@ function BriefingScreen() {
   const markBriefingSeen = useSettings((s) => s.markBriefingSeen);
 
   const raw = params.get("mode");
-  const mode: DifficultyMode =
-    raw === "medium" || raw === "hard" ? (raw as DifficultyMode) : "easy";
+  const mode: DifficultyMode = DIFFICULTY_ORDER.some((m) => m === raw)
+    ? (raw as DifficultyMode)
+    : "easy";
   const config = DIFFICULTIES[mode];
 
   const instruction = `Tap MATCH when you see the same ingredient from ${config.n} steps back.`;
@@ -59,9 +64,19 @@ function BriefingScreen() {
             <span aria-hidden="true">🥕</span>
           </div>
           <p className="mt-4 text-[1.25rem] leading-relaxed text-ink-soft">
-            The third card is <strong className="text-ink">Tomato</strong> — the same
-            as {config.n} card{config.n > 1 ? "s" : ""} before. Tap{" "}
-            <strong className="text-ink">MATCH</strong>!
+            {config.n <= 2 ? (
+              <>
+                The third card is <strong className="text-ink">Tomato</strong> —
+                the same as {config.n} card{config.n > 1 ? "s" : ""} before. Tap{" "}
+                <strong className="text-ink">MATCH</strong>!
+              </>
+            ) : (
+              <>
+                This strip shows 2-back. Your round looks back{" "}
+                <strong className="text-ink">{numberWord(config.n)} cards</strong>{" "}
+                instead.
+              </>
+            )}
           </p>
         </div>
 

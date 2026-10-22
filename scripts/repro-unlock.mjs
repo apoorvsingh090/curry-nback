@@ -1,12 +1,13 @@
 /**
- * Reproduction of the user report: finished Easy, did not go to Medium.
+ * Reproduction of the user report: finished one round, the next difficulty
+ * did not unlock.
  *
- * Plays a full session in a fresh browser profile (no seeding except that
- * non-easy modes need the previous level's qualifying sessions) with a
- * configurable perfect-rate, then reports the session accuracy, the summary
- * unlock announcement and the Home screen's next-difficulty state.
+ * Plays a full session of any ladder level in a fresh browser profile (all
+ * predecessor levels are seeded as already qualified) with a configurable
+ * perfect-rate, then reports the session accuracy, the summary unlock
+ * announcement and the Home screen's next-difficulty state.
  *
- * Usage: node scripts/repro-unlock.mjs [baseUrl] [correctOdds 0..1] [mode easy|medium|hard]
+ * Usage: node scripts/repro-unlock.mjs [baseUrl] [correctOdds 0..1] [mode]
  */
 import { chromium } from "playwright";
 import { existsSync } from "node:fs";
@@ -16,9 +17,33 @@ import { join } from "node:path";
 const baseUrl = process.argv[2] ?? "http://localhost:3000";
 const correctOdds = process.argv[3] ? Number(process.argv[3]) : 1;
 const modeArg = process.argv[4];
-const mode = ["easy", "medium", "hard"].includes(modeArg) ? modeArg : "easy";
-const N = { easy: 1, medium: 2, hard: 3 }[mode];
-const NEXT = { easy: "Medium", medium: "Hard", hard: null }[mode];
+const MODES = [
+  "easy",
+  "medium",
+  "hard",
+  "level4",
+  "level5",
+  "level6",
+  "level7",
+  "level8",
+  "level9",
+];
+const LABELS = [
+  "Easy",
+  "Medium",
+  "Hard",
+  "Level 4",
+  "Level 5",
+  "Level 6",
+  "Level 7",
+  "Level 8",
+  "Level 9",
+];
+const mode = MODES.includes(modeArg) ? modeArg : "easy";
+const index = MODES.indexOf(mode);
+const N = index + 1;
+const poolBase = mode === "easy" ? 3000 : mode === "medium" ? 2500 : 2000;
+const nextLabel = LABELS[index + 1] ?? null;
 
 const cache = join(homedir(), "AppData", "Local", "ms-playwright");
 const executablePath = ["chromium-1243/chrome-win64/chrome.exe", "chromium-1234/chrome-win64/chrome.exe"]
@@ -31,7 +56,12 @@ const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
 /* Non-easy modes need their predecessors to have qualified. Seed quietly. */
 if (mode !== "easy") {
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
-  await page.evaluate(async ({ mode, N }) => {
+  const seeds = [];
+  for (let i = 0; i < index; i++) {
+    const base = MODES[i] === "easy" ? 3000 : MODES[i] === "medium" ? 2500 : 2000;
+    seeds.push({ id: `seed-${MODES[i]}`, mode: MODES[i], n: i + 1, base });
+  }
+  await page.evaluate(async (seedList) => {
     const db = await new Promise((resolve, reject) => {
       const request = indexedDB.open("curry-nback", 1);
       request.onupgradeneeded = () => {
@@ -44,16 +74,9 @@ if (mode !== "easy") {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
-    const predecessors =
-      mode === "medium"
-        ? [{ id: "seed-easy", mode: "easy", n: 1, pool: 4, base: 3000 }]
-        : [
-            { id: "seed-easy", mode: "easy", n: 1, pool: 4, base: 3000 },
-            { id: "seed-medium", mode: "medium", n: 2, pool: 6, base: 2500 },
-          ];
     const tx = db.transaction("sessions", "readwrite");
     const store = tx.objectStore("sessions");
-    for (const seed of predecessors) {
+    for (const seed of seedList) {
       store.put({
         id: seed.id,
         startedAt: Date.now() - 2 * 86400000,
@@ -74,7 +97,7 @@ if (mode !== "easy") {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
-  }, { mode, N });
+  }, seeds);
 }
 
 /* Fresh profile: go to home and click through Start Cooking. */
@@ -158,10 +181,12 @@ const pickerText = await page
   .locator("section[aria-labelledby='difficulty-heading']")
   .innerText()
   .catch(() => "(no picker)");
-const nextButtonPattern = mode === "easy" ? /Medium/ : /Hard/;
-const nextButton = page.getByRole("button", { name: nextButtonPattern });
-const nextEnabled = await nextButton.isEnabled().catch(() => null);
-const nextLabel = await nextButton.textContent().catch(() => "");
+const nextEnablement = nextLabel
+  ? await page
+      .getByRole("button", { name: new RegExp(`^${nextLabel}`) })
+      .isEnabled()
+      .catch(() => null)
+  : null;
 const selectedDifficulty = await page
   .locator("button[aria-pressed=true]")
   .textContent()
@@ -171,7 +196,7 @@ console.log("---");
 console.log(`mode=${mode} odds=${correctOdds}  finished=${finished}  headline=${headline?.trim()}`);
 console.log(`summary announcement: ${unlockAnnouncement?.trim() ?? "(none)"}`);
 console.log(`session: ${data ? `${data.mode} accuracy=${data.accuracy * 100}%` : "none stored"}`);
-console.log(`home: ${mode === "easy" ? "medium" : "hard"}Enabled=${nextEnabled}  label=${nextLabel?.trim()}`);
+console.log(`home: ${nextLabel ?? "(top)"}Enabled=${nextEnablement}`);
 console.log(`home picker says: ${pickerText.replace(/\s+/g, " ")}`);
 console.log(`home: selected difficulty=${selectedDifficulty?.trim()}`);
 

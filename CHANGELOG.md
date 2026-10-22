@@ -6,6 +6,22 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The difficulty ladder now runs to **Level 9 (9-back)**: six new levels
+  above Hard, each unlocked one at a time by ≥ 80% accuracy on the level
+  below. From Level 4 the pace holds at 2000ms so the challenge rises with
+  N, not with speed.
+
+### Changed
+
+- The summary screen announces a newly unlocked level ("⭐ Level 5 is
+  unlocked — pick it on the home screen").
+- The home picker states the unlock rule ("Score 80% or better on Level 4
+  to unlock Level 5.") next to locked levels.
+- The briefing example now says which levels it illustrates when the
+  round is above 2-back.
+
 ## [0.1.0] — 2026-10-22
 
 ### Added

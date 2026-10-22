@@ -32,6 +32,31 @@ the dashboard needs indexed queries.
 
 ## Game rules
 
+### The ladder continues past Hard, to 9-back
+
+The original spec stopped at Hard (3-back). players who cleared it had
+nowhere to go, so the ladder now runs to Level 9 (9-back) with one unlock
+rule for every level: ≥ 80% accuracy on the level below.
+
+Decisions inside that extension:
+
+- **Stable mode keys.** `easy` / `medium` / `hard` keep their names and
+  stored values (session records, last-played preference, URLs); new
+  levels use `level4` … `level9`. Nothing in old device data breaks.
+- **Pace holds at 2000ms from Hard to Level 9.** Rising N *is* the
+  difficulty; making cards flicker faster on top of 9-back would punish
+  the exact users the game serves. The adaptive engine still shortens or
+  lengthens the pace inside a round (1200–4000ms).
+- **Pool stays at 8 ingredients above Medium.** A bigger pool would add a
+  second, different kind of difficulty on top of N.
+- **Labels are `Level 4` … `Level 9`** while the first three keep their
+  thematic names; every button also shows its N ("4-back").
+- **The briefing example stays the 2-back strip** for levels above Medium,
+  with a line saying the round looks back N cards instead — a 9-card strip
+  would be noise, not an example.
+- **URLs let any unlocked level in** (`/play?mode=level6`); locked levels
+  redirect Home, as before, so a caregiver can pre-set a round.
+
 ### The first N cards are never matches
 
 For `i < n` there is no card to compare against, so `isMatch` is always

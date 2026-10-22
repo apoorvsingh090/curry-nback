@@ -4,7 +4,11 @@ import {
   isHigherMode,
   isModeUnlocked,
 } from "@/lib/progression";
-import { DIFFICULTIES, DIFFICULTY_ORDER } from "@/lib/difficulty";
+import {
+  DIFFICULTIES,
+  DIFFICULTY_ORDER,
+  nextMode,
+} from "@/lib/difficulty";
 import type { DifficultyMode, Session } from "@/lib/types";
 
 function session(mode: DifficultyMode, accuracy: number, startedAt = 0): Session {
@@ -39,6 +43,17 @@ describe("difficulty configuration", () => {
     expect(DIFFICULTIES.hard.displayDurationMs).toBe(2000);
     expect(DIFFICULTIES.hard.poolSize).toBe(8);
   });
+
+  it("reaches 9-back in nine levels", () => {
+    expect(DIFFICULTY_ORDER).toHaveLength(9);
+    DIFFICULTY_ORDER.forEach((mode, index) => {
+      expect(DIFFICULTIES[mode].n).toBe(index + 1);
+      expect(DIFFICULTIES[mode].poolSize).toBeLessThanOrEqual(8);
+      expect(DIFFICULTIES[mode].displayDurationMs).toBeGreaterThanOrEqual(2000);
+    });
+    expect(DIFFICULTIES.level9.label).toBe("Level 9");
+    expect(DIFFICULTIES.level9.description).toBe("Look back nine cards.");
+  });
 });
 
 describe("unlock rules", () => {
@@ -59,6 +74,19 @@ describe("unlock rules", () => {
   it("does not skip a level", () => {
     const sessions = [session("hard", 1)];
     expect(evaluateUnlockedMode(sessions)).toBe("easy");
+    const single = [session("level9", 1)];
+    expect(evaluateUnlockedMode(single)).toBe("easy");
+  });
+
+  it("walks the whole ladder one qualifying round at a time", () => {
+    let sessions: Session[] = [];
+    let unlocked = evaluateUnlockedMode(sessions);
+    for (const mode of DIFFICULTY_ORDER) {
+      sessions = [...sessions, session(mode, 0.8)];
+      unlocked = evaluateUnlockedMode(sessions);
+      expect(unlocked).toBe(nextMode(mode) ?? mode);
+    }
+    expect(unlocked).toBe("level9");
   });
 
   it("reports which modes are available", () => {
@@ -66,10 +94,22 @@ describe("unlock rules", () => {
     expect(isModeUnlocked("medium", "easy")).toBe(false);
     expect(isModeUnlocked("hard", "medium")).toBe(false);
     expect(isModeUnlocked("hard", "hard")).toBe(true);
+    expect(isModeUnlocked("level4", "hard")).toBe(false);
+    expect(isModeUnlocked("level9", "level9")).toBe(true);
   });
 
   it("keeps the difficulty order", () => {
-    expect(DIFFICULTY_ORDER).toEqual(["easy", "medium", "hard"]);
+    expect(DIFFICULTY_ORDER).toEqual([
+      "easy",
+      "medium",
+      "hard",
+      "level4",
+      "level5",
+      "level6",
+      "level7",
+      "level8",
+      "level9",
+    ]);
   });
 
   it("detects a newly unlocked difficulty", () => {
@@ -78,5 +118,7 @@ describe("unlock rules", () => {
     expect(isHigherMode("medium", "medium")).toBe(false);
     expect(isHigherMode("medium", "hard")).toBe(true);
     expect(isHigherMode("hard", "easy")).toBe(false);
+    expect(isHigherMode("level8", "level9")).toBe(true);
+    expect(isHigherMode("level9", "level9")).toBe(false);
   });
 });

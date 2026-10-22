@@ -7,6 +7,7 @@ import SpeakerToggle from "@/components/SpeakerToggle";
 import { INGREDIENTS, ingredientById } from "@/lib/ingredients";
 import {
   DIFFICULTIES,
+  DIFFICULTY_ORDER,
   INTER_TRIAL_GAP_MS,
   TRIALS_PER_SESSION,
 } from "@/lib/difficulty";
@@ -47,8 +48,9 @@ export default function GameScreen() {
   const params = useSearchParams();
 
   const raw = params.get("mode");
-  const mode: DifficultyMode =
-    raw === "medium" || raw === "hard" ? (raw as DifficultyMode) : "easy";
+  const mode: DifficultyMode = DIFFICULTY_ORDER.some((m) => m === raw)
+    ? (raw as DifficultyMode)
+    : "easy";
   const config = DIFFICULTIES[mode];
 
   const [card, setCard] = useState<Ingredient | null>(null);

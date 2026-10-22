@@ -4,7 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import LineChart from "@/components/LineChart";
 import TopBar from "@/components/TopBar";
 import { BigButton } from "@/components/BigButton";
-import { DIFFICULTIES, DIFFICULTY_ORDER, UNLOCK_ACCURACY } from "@/lib/difficulty";
+import {
+  DIFFICULTIES,
+  DIFFICULTY_ORDER,
+  UNLOCK_ACCURACY,
+  previousMode,
+} from "@/lib/difficulty";
 import { isModeUnlocked } from "@/lib/progression";
 import { useSettings } from "@/lib/store";
 import { useSessions } from "@/lib/useSessions";
@@ -209,6 +214,7 @@ export default function ProgressScreen() {
                 {DIFFICULTY_ORDER.map((mode) => {
                   const config = DIFFICULTIES[mode];
                   const unlocked = isModeUnlocked(mode, unlockedMode);
+                  const requirement = previousMode(mode);
                   return (
                     <li
                       key={mode}
@@ -221,9 +227,9 @@ export default function ProgressScreen() {
                         <p className="text-[1rem] leading-snug text-ink-soft">
                           {unlocked
                             ? "Unlocked"
-                            : `Reach ${Math.round(UNLOCK_ACCURACY * 100)}% accuracy on ${DIFFICULTIES[
-                                mode === "medium" ? "easy" : "medium"
-                              ].label} to unlock`}
+                            : requirement
+                              ? `Reach ${Math.round(UNLOCK_ACCURACY * 100)}% accuracy on ${DIFFICULTIES[requirement].label} to unlock`
+                              : "Unlocked"}
                         </p>
                       </div>
                       <span aria-hidden="true" className="text-[2rem]">

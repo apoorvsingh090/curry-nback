@@ -5,8 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { BigLinkButton } from "@/components/BigButton";
 import SpeakerToggle from "@/components/SpeakerToggle";
 import { getSession } from "@/lib/db";
-import { DIFFICULTIES } from "@/lib/difficulty";
-import { useLastSession } from "@/lib/store";
+import { DIFFICULTIES } from "@/lib/difficulty";import { useLastSession } from "@/lib/store";
 import { formatDuration } from "@/lib/utils";
 import type { Session } from "@/lib/types";
 
@@ -89,7 +88,7 @@ function SummaryScreen() {
           {headlineFor(session.accuracy)}
         </h1>
         <p className="mt-2 text-[1.25rem] text-ink-soft">
-          {session.n}-back &middot; {session.mode} round
+          {DIFFICULTIES[session.mode].label} &middot; {session.n}-back round
         </p>
 
         <div className="mt-8 w-full">
