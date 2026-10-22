@@ -20,3 +20,4 @@ screenshots/
 .DS_Store
 
 lighthouse*.json
+.env*

@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   description:
     "A gentle N-back memory game designed for adults 65+. Caregiver dashboard included.",
   applicationName: "Curry Kitchen",
+  metadataBase: new URL("https://curry-nback.vercel.app"),
   appleWebApp: {
     capable: true,
     title: "Curry Kitchen",
