@@ -25,7 +25,12 @@ function SummaryScreen() {
   const newlyUnlocked = useLastSession((s) => s.newlyUnlocked);
 
   useEffect(() => {
-    if (session || !id) return;
+    if (session) return;
+    if (!id) {
+      // /summary without a session id must not dead-end on "Loading…" (QA B-2).
+      setMissing(true);
+      return;
+    }
     let cancelled = false;
     void getSession(id)
       .then((found) => {
@@ -63,7 +68,11 @@ function SummaryScreen() {
   }
 
   const accuracyPercent = Math.round(session.accuracy * 100);
-  const durationMs = session.endedAt - session.startedAt;
+  // Paused time (hidden tab / quit dialog) does not count as play time (QA B-3).
+  const durationMs = Math.max(
+    0,
+    session.endedAt - session.startedAt - (session.pausedMs ?? 0)
+  );
 
   const stats = [
     { label: "Accuracy", value: `${accuracyPercent}%` },

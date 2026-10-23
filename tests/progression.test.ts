@@ -8,6 +8,7 @@ import {
   DIFFICULTIES,
   DIFFICULTY_ORDER,
   nextMode,
+  parseModeParam,
 } from "@/lib/difficulty";
 import type { DifficultyMode, Session } from "@/lib/types";
 
@@ -120,5 +121,25 @@ describe("unlock rules", () => {
     expect(isHigherMode("hard", "easy")).toBe(false);
     expect(isHigherMode("level8", "level9")).toBe(true);
     expect(isHigherMode("level9", "level9")).toBe(false);
+  });
+});
+
+describe("parseModeParam (QA B-5)", () => {
+  it("treats a missing or empty param as Easy", () => {
+    expect(parseModeParam(null)).toBe("easy");
+    expect(parseModeParam("")).toBe("easy");
+  });
+
+  it("accepts every valid key", () => {
+    for (const mode of DIFFICULTY_ORDER) {
+      expect(parseModeParam(mode)).toBe(mode);
+    }
+  });
+
+  it("sends unrecognised keys home instead of guessing Easy", () => {
+    expect(parseModeParam("ez")).toBe(null);
+    expect(parseModeParam("Easy")).toBe(null);
+    expect(parseModeParam("medium ")).toBe(null);
+    expect(parseModeParam("%20")).toBe(null);
   });
 });

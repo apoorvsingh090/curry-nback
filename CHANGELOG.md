@@ -22,6 +22,32 @@ follow [Semantic Versioning](https://semver.org/).
 - The briefing example now says which levels it illustrates when the
   round is above 2-back.
 
+### Fixed
+
+- The briefing example strip finally demonstrates 1-back correctly: the
+  third card now repeats the card right before it (QA B-1).
+- The Easy worked example says "one step back" (QA B-8).
+- `/summary` opened without a session id (or with an unknown one) shows a
+  friendly way out instead of "Loading…" forever (QA B-2).
+- Hidden browser tabs no longer freeze the game behind the player's back:
+  hiding the tab pauses the round, and tapping Continue restarts the
+  current card from a full display window. Session time excludes paused
+  periods (QA B-3).
+- `/brief` now enforces the same unlock gate as the game itself (QA B-4).
+- Unrecognised `?mode=` values redirect home instead of silently playing
+  Easy; a missing value still plays Easy (QA B-5).
+- The in-game progress bar reaches 100% on the final card (QA B-6).
+- A running round can be left via a Quit control in the header with an
+  explicit confirm dialog; quitting does not save the round (QA B-7).
+
+### Security / reliability
+
+- `syncUnlocks` only ever climbs, so a storage failure that empties
+  IndexedDB can no longer demote an old unlocked level below what local
+  settings already grant (QA O-1/O-7 mitigation).
+- Every session contains at least five match trials (QA O-4).
+- The spoken-feedback timer is tracked with the other timers (QA O-5).
+
 ## [0.1.0] — 2026-10-22
 
 ### Added

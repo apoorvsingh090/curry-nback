@@ -6,9 +6,10 @@ import { BigButton } from "@/components/BigButton";
 import SpeakerToggle from "@/components/SpeakerToggle";
 import {
   DIFFICULTIES,
-  DIFFICULTY_ORDER,
   numberWord,
+  parseModeParam,
 } from "@/lib/difficulty";
+import { isModeUnlocked } from "@/lib/progression";
 import { speak } from "@/lib/audio";
 import { useSettings } from "@/lib/store";
 import type { DifficultyMode } from "@/lib/types";
@@ -20,12 +21,40 @@ function BriefingScreen() {
   const markBriefingSeen = useSettings((s) => s.markBriefingSeen);
 
   const raw = params.get("mode");
-  const mode: DifficultyMode = DIFFICULTY_ORDER.some((m) => m === raw)
-    ? (raw as DifficultyMode)
-    : "easy";
+  // Missing param → Easy; unrecognised value → home (QA B-5). A locked
+  // difficulty reached by typing the URL is also sent home (QA B-4).
+  const parsed = parseModeParam(raw);
+  const mode: DifficultyMode = parsed ?? "easy";
   const config = DIFFICULTIES[mode];
 
-  const instruction = `Tap MATCH when you see the same ingredient from ${config.n} steps back.`;
+  const instruction = `Tap MATCH when you see the same ingredient from ${numberWord(config.n)} step${config.n > 1 ? "s" : ""} back.`;
+
+  useEffect(() => {
+    const evaluate = () => {
+      if (
+        parsed === null ||
+        !isModeUnlocked(mode, useSettings.getState().unlockedMode)
+      ) {
+        router.replace("/");
+      }
+    };
+    // Persisted settings hydrate asynchronously — evaluate once ready (QA B-4).
+    if (useSettings.persist.hasHydrated()) {
+      evaluate();
+      return;
+    }
+    const unsubscribe = useSettings.persist.onFinishHydration(evaluate);
+    return () => unsubscribe();
+  }, [mode, parsed, router]);
+
+  // The worked example must match the wording for its N: the default strip
+  // (Tomato, Onion, Tomato, Carrot) demonstrates TWO steps back, so 1-back
+  // rounds get their own strip where the third card repeats the one right
+  // before it (QA B-1).
+  const strip =
+    config.n === 1
+      ? ["🧅", "🍅", "🍅", "🥕"]
+      : ["🍅", "🧅", "🍅", "🥕"];
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -57,11 +86,16 @@ function BriefingScreen() {
 
         <div className="mt-8 w-full max-w-2xl rounded-2xl border-2 border-line bg-surface p-6 shadow-card">
           <p className="text-[1.25rem] font-bold text-ink">Example</p>
-          <div className="mt-4 flex items-center justify-center gap-3 text-[2.5rem]">
-            <span aria-hidden="true">🍅</span>
-            <span aria-hidden="true">🧅</span>
-            <span aria-hidden="true">🍅</span>
-            <span aria-hidden="true">🥕</span>
+          <div data-testid="example-strip" className="mt-4 flex items-center justify-center gap-3 text-[2.5rem]">
+            {strip.map((emoji, i) => (
+              <span
+                key={i}
+                aria-hidden="true"
+                className={i === 2 ? "rounded-xl bg-brand-soft px-2" : ""}
+              >
+                {emoji}
+              </span>
+            ))}
           </div>
           <p className="mt-4 text-[1.25rem] leading-relaxed text-ink-soft">
             {config.n <= 2 ? (

@@ -93,3 +93,12 @@ export function previousMode(mode: DifficultyMode): DifficultyMode | null {
   if (idx <= 0) return null;
   return DIFFICULTY_ORDER[idx - 1];
 }
+
+/**
+ * Parses a `?mode=` value (spec QA B-5): a valid key → that mode, a missing
+ * value → Easy, anything else → null so the caller can redirect home.
+ */
+export function parseModeParam(raw: string | null): DifficultyMode | null {
+  if (raw === null || raw === "") return "easy";
+  return DIFFICULTY_ORDER.some((m) => m === raw) ? (raw as DifficultyMode) : null;
+}

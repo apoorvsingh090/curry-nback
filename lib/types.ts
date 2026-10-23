@@ -84,6 +84,11 @@ export interface Session {
   matchesCaught: number;
   /** Every adaptive change made during the session. */
   adjustments: AdaptiveAdjustment[];
+  /**
+   * Total time the round spent paused (hidden tab or quit dialog). Optional
+   * so older records without the field still load (QA B-3).
+   */
+  pausedMs?: number;
 }
 
 export interface Settings {

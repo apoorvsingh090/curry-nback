@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { DIFFICULTY_ORDER } from "./difficulty";
 import { evaluateUnlockedMode } from "./progression";
 import type { DifficultyMode, Settings, Session } from "./types";
 
@@ -26,10 +27,14 @@ export const useSettings = create<SettingsStore>()(
       setUnlockedMode: (mode) => set({ unlockedMode: mode }),
       syncUnlocks: (sessions) => {
         const unlockedMode = evaluateUnlockedMode(sessions);
+        // Unlocks only ever climb. If IndexedDB is empty because storage
+        // failed or was cleared, the stored level must not be demoted
+        // (QA O-1/O-7).
         set((state) =>
-          state.unlockedMode === unlockedMode
-            ? state
-            : { unlockedMode }
+          DIFFICULTY_ORDER.indexOf(unlockedMode) >
+          DIFFICULTY_ORDER.indexOf(state.unlockedMode)
+            ? { unlockedMode }
+            : state
         );
       },
     }),

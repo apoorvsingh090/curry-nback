@@ -7,9 +7,9 @@ import SpeakerToggle from "@/components/SpeakerToggle";
 import { INGREDIENTS, ingredientById } from "@/lib/ingredients";
 import {
   DIFFICULTIES,
-  DIFFICULTY_ORDER,
   INTER_TRIAL_GAP_MS,
   TRIALS_PER_SESSION,
+  parseModeParam,
 } from "@/lib/difficulty";
 import { generateSequence } from "@/lib/sequence";
 import {
@@ -48,14 +48,26 @@ export default function GameScreen() {
   const params = useSearchParams();
 
   const raw = params.get("mode");
-  const mode: DifficultyMode = DIFFICULTY_ORDER.some((m) => m === raw)
-    ? (raw as DifficultyMode)
-    : "easy";
+  // Missing param plays Easy; an unrecognised value sends the player home
+  // instead of silently reinterpreting it (QA B-5).
+  const parsed = parseModeParam(raw);
+  const mode: DifficultyMode = parsed ?? "easy";
   const config = DIFFICULTIES[mode];
 
   const [card, setCard] = useState<Ingredient | null>(null);
   const [trialIndex, setTrialIndex] = useState(0);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [paused, setPaused] = useState(false);
+  const [confirmQuit, setConfirmQuit] = useState(false);
+
+  // Tap-to-continue after the tab was hidden (QA B-3) and the quit dialog
+  // (QA B-7) both freeze the loop behind an overlay.
+  const pausedRef = useRef(false);
+  const hiddenAtRef = useRef<number | null>(null);
+  const pausedTotalRef = useRef(0);
+  const confirmQuitRef = useRef(false);
+  const feedbackTimersRef = useRef<number[]>([]);
+  const resumeRef = useRef<() => void>(() => {});
 
   const setLastSession = useLastSession((s) => s.setLastSession);
 
@@ -78,6 +90,7 @@ export default function GameScreen() {
   }, []);
 
   const handleTap = useCallback(() => {
+    if (pausedRef.current || confirmQuitRef.current) return;
     if (phaseRef.current !== "showing" || answeredRef.current) return;
     answeredRef.current = true;
 
@@ -104,9 +117,10 @@ export default function GameScreen() {
     speak(correct ? "Nice!" : "Not quite", voiceEnabled);
 
     const feedbackId = feedbackIdRef.current;
-    window.setTimeout(() => {
+    const feedbackTimer = window.setTimeout(() => {
       setFeedback((current) => (current?.id === feedbackId ? null : current));
     }, 600);
+    feedbackTimersRef.current.push(feedbackTimer);
   }, []);
 
   /** Forgiving input: a tap in the lower 40% of the screen counts as MATCH. */
@@ -125,8 +139,13 @@ export default function GameScreen() {
     if (startedRef.current) return;
     startedRef.current = true;
 
-    // A locked difficulty can still be reached through a hand-typed URL.
-    if (!isModeUnlocked(mode, useSettings.getState().unlockedMode)) {
+    // An unrecognised ?mode= value sends the player home (QA B-5), as does
+    // a locked difficulty reached through a hand-typed URL. Settings persist
+    // with synchronous localStorage storage, so they are ready here.
+    if (
+      parsed === null ||
+      !isModeUnlocked(mode, useSettings.getState().unlockedMode)
+    ) {
       router.replace("/");
       return;
     }
@@ -160,6 +179,7 @@ export default function GameScreen() {
         points: computePoints(trials),
         matchesCaught: countMatchesCaught(trials),
         adjustments: adjustmentsRef.current,
+        pausedMs: pausedTotalRef.current,
       };
 
       setLastSession(session);
@@ -260,6 +280,55 @@ export default function GameScreen() {
       );
     };
 
+    // Hidden tabs freeze setTimeout chains, so cards would overlap and the
+    // timer would skew (QA B-3). Pausing is the honest answer: stop the
+    // loop, ask the player to tap to continue, and restart the current
+    // card fresh so no thinking time is stolen.
+    const pauseGame = () => {
+      if (phaseRef.current === "finished" || pausedRef.current) return;
+      pausedRef.current = true;
+      setPaused(true);
+      setFeedback(null);
+      feedbackTimersRef.current.forEach((t) => window.clearTimeout(t));
+      feedbackTimersRef.current = [];
+      hiddenAtRef.current = Date.now();
+      timers.forEach((t) => window.clearTimeout(t));
+      timersRef.current = [];
+    };
+
+    const gapTimerId = () =>
+      window.setTimeout(
+        () => showTrial(indexRef.current + 1),
+        INTER_TRIAL_GAP_MS
+      );
+
+    const resumeGame = () => {
+      if (!pausedRef.current) return;
+      pausedRef.current = false;
+      setPaused(false);
+      if (hiddenAtRef.current !== null) {
+        pausedTotalRef.current += Date.now() - hiddenAtRef.current;
+        hiddenAtRef.current = null;
+      }
+
+      const phase = phaseRef.current;
+      if (phase === "starting") {
+        timers.push(window.setTimeout(() => showTrial(0), 900));
+      } else if (phase === "showing") {
+        // Re-run the current card from a full display window.
+        showTrial(indexRef.current);
+      } else if (phase === "gap") {
+        timers.push(gapTimerId());
+      }
+    };
+    resumeRef.current = resumeGame;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") pauseGame();
+      // Resuming is deliberately manual — the overlay asks for a tap.
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     speak(`Let's cook. ${config.n} back.`, useSettings.getState().voiceEnabled);
 
     timers.push(
@@ -269,7 +338,10 @@ export default function GameScreen() {
     );
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       timers.forEach((t) => window.clearTimeout(t));
+      feedbackTimersRef.current.forEach((t) => window.clearTimeout(t));
+      feedbackTimersRef.current = [];
       timersRef.current = [];
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -288,7 +360,30 @@ export default function GameScreen() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleTap]);
 
-  const progress = Math.round((trialIndex / TRIALS_PER_SESSION) * 100);
+  // Rising toward 100% as the round completes (QA B-6: the last card now
+  // reads 100%, not 96%).
+  const progress = Math.min(
+    100,
+    Math.round(((trialIndex + 1) / TRIALS_PER_SESSION) * 100)
+  );
+
+  const openQuitDialog = () => {
+    confirmQuitRef.current = true;
+    setConfirmQuit(true);
+    // The round waits while the player decides (same freeze as QA B-3).
+    timersRef.current.forEach((t) => window.clearTimeout(t));
+    timersRef.current = [];
+    pausedRef.current = true;
+    hiddenAtRef.current = Date.now();
+    setPaused(true);
+  };
+
+  const keepPlaying = () => {
+    confirmQuitRef.current = false;
+    setConfirmQuit(false);
+    resumeRef.current();
+  };
+
 
   return (
     <div
@@ -297,17 +392,30 @@ export default function GameScreen() {
     >
       <header className="shrink-0">
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 px-5 py-3">
-          <div>
-            <p
-              data-testid="trial-counter"
-              className="text-[1.25rem] font-bold leading-tight text-ink"
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={openQuitDialog}
+              aria-label="Quit round"
+              title="Quit round"
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-line bg-surface text-ink transition-transform active:scale-95"
             >
-              Card {Math.min(trialIndex + 1, TRIALS_PER_SESSION)} of{" "}
-              {TRIALS_PER_SESSION}
-            </p>
-            <p className="text-[1rem] leading-snug text-ink-soft">
-              {config.label} &middot; {config.n}-back
-            </p>
+              <span aria-hidden="true" className="text-[1.75rem] leading-none">
+                ✕
+              </span>
+            </button>
+            <div>
+              <p
+                data-testid="trial-counter"
+                className="text-[1.25rem] font-bold leading-tight text-ink"
+              >
+                Card {Math.min(trialIndex + 1, TRIALS_PER_SESSION)} of{" "}
+                {TRIALS_PER_SESSION}
+              </p>
+              <p className="text-[1rem] leading-snug text-ink-soft">
+                {config.label} &middot; {config.n}-back
+              </p>
+            </div>
           </div>
           <SpeakerToggle />
         </div>
@@ -404,6 +512,61 @@ export default function GameScreen() {
           MATCH
         </button>
       </div>
+
+      {confirmQuit || paused ? (
+        <div
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-6 bg-cream/95 px-6 text-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label={confirmQuit ? "Quit this round?" : "Round paused"}
+        >
+          {confirmQuit ? (
+            <>
+              <p className="text-[1.75rem] font-bold leading-tight text-ink">
+                Quit this round?
+              </p>
+              <p className="max-w-md text-[1.25rem] leading-snug text-ink-soft">
+                Leaving now will not save this round.
+              </p>
+              <div className="flex w-full max-w-sm flex-col gap-4">
+                <button
+                  type="button"
+                  onClick={keepPlaying}
+                  className="flex h-16 w-full items-center justify-center rounded-2xl bg-brand text-[1.5rem] font-bold text-white shadow-button transition-transform active:translate-y-1 active:shadow-none"
+                >
+                  Keep playing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/")}
+                  className="flex h-16 w-full items-center justify-center rounded-2xl border-2 border-line bg-surface text-[1.5rem] font-bold text-ink transition-transform active:scale-95"
+                >
+                  Quit round
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p aria-hidden="true" className="text-[4rem] leading-none">
+                ⏸️
+              </p>
+              <p className="text-[1.75rem] font-bold leading-tight text-ink">
+                Round paused
+              </p>
+              <p className="max-w-md text-[1.25rem] leading-snug text-ink-soft">
+                Take your time. The next card is waiting for you.
+              </p>
+              <button
+                type="button"
+                onClick={() => resumeRef.current()}
+                className="flex h-16 w-full max-w-sm items-center justify-center rounded-2xl bg-brand text-[1.5rem] font-bold text-white shadow-button transition-transform active:translate-y-1 active:shadow-none"
+              >
+                Continue cooking
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

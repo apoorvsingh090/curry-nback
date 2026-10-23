@@ -135,6 +135,35 @@ SFX generated from scratch by `scripts/generate-audio.mjs`.
 Correct/incorrect feedback always carries a word ("Nice!" / "Not quite").
 Difficulty state uses a lock emoji as well as a colour.
 
+### A hidden tab pauses the round instead of racing it
+
+Scrolling `setTimeout` chains do not run while a browser tab is hidden but
+the wall clock keeps counting, so ignoring visibility would print overlapping
+cards and skew the session time (external QA report, bug B-3). Instead, the
+round freezes on `visibilitychange`, a full-screen overlay asks for a tap to
+continue, and continuing restarts the current card from a full display
+window — the player never loses thinking time they already saw. Paused
+periods are recorded on the session (`pausedMs`) and subtracted from the
+"Session time" figure on the summary. The same freeze backs the in-game
+Quit dialog so the round cannot tick on behind it.
+
+### Leaving a round is possible and is always announced
+
+The spec had no exit from a running round, which traps a player in a wrong
+difficulty for up to three minutes. A small ✕ control (aria-label
+"Quit round") sits in the game header opposite the speaker toggle; pressing
+it opens a two-button confirm dialog — "Keep playing" (primary) resumes the
+frozen round, "Quit round" goes home without saving. Quitting saves nothing,
+matching the existing behaviour for a mid-round app close, and the dialog
+says so explicitly.
+
+### The worked example always demonstrates the round's own N
+
+The default example strip (🍅🧅🍅🥕) only makes sense as 2-back, so 1-back
+rounds show 🧅🍅🍅🥕 with the third card matching the one immediately before
+it; the strip and the wording are derived from the same `n` (external QA
+report, bugs B-1/B-8).
+
 ## Technical
 
 ### `@ducanh2912/next-pwa` instead of `next-pwa`
@@ -179,10 +208,40 @@ report", so it never enters the initial bundle.
 
 `generateSequence(length, n, pool, matchProbability, random = Math.random)`
 behaves exactly like the §7 signature, with an optional fifth parameter so
-the tests can be deterministic.
+the tests can be deterministic. An optional sixth parameter sets the minimum
+match count; every session is topped up to at least five match trials so no
+round plays out with nothing to catch (external QA report, observation
+O-4). Top-up only flips eligible non-match trials — the card-equality
+invariant of §7 is unaffected.
+
+### Argument-parsing never silently reinterprets
+
+`?mode=` uses `parseModeParam`: a missing value plays Easy (the default the
+poster implies), a value that is not a ladder key redirects home instead of
+quietly becoming Easy, and `/brief` enforces the same unlock gate as the
+game itself (external QA report, bugs B-4/B-5).
+
+### Unlock syncing is monotonic
+
+`syncUnlocks` compares ladder positions and only ever raises
+`unlockedMode`. If IndexedDB comes back empty — private-mode storage,
+cleared data, or a transient failure — the level a player already unlocked
+locally is never demoted (external QA report, observations O-1/O-7; a full
+banner minting "backup unlocks" out of thin air is explicitly deferred).
 
 ## Explicitly not built
 
-Per §9, the MVP has no accounts, payments, social features, ads,
+Per §3, the MVP has no accounts, payments, social features, ads,
 localisation, native apps or LLM calls. Nothing in the code has a hook for
 any of them.
+
+From the external QA report, the following observations are recorded here as
+deliberate non-changes for the MVP; each has a tracking issue in the
+repository:
+
+- **O-1** — a visible banner when history was lost from storage (the
+  monotonic `syncUnlocks` mitigates the unlock half only).
+- **O-2** — reluctance to drop theSticky Brain Score vocabulary this late.
+- **O-3** — the +1 "Sessions" counter only ticks on finished rounds.
+- **O-6** — speaker toggle is not exposed under the iOS status bar.
+- **O-7** — survivors of storage wipes are not auto-restored from a backup.

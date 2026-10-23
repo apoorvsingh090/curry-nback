@@ -75,4 +75,20 @@ describe("generateSequence", () => {
   it("throws when the ingredient pool is empty", () => {
     expect(() => generateSequence(25, 2, [], 0.3)).toThrow();
   });
+
+  it("always includes at least MIN_MATCHES_PER_SESSION matches (QA O-4)", () => {
+    for (let seed = 0; seed < 200; seed++) {
+      const random = mulberry32(seed);
+      const n = 1 + (seed % 9);
+      // Skew the match probability toward zero so most seeds would produce
+      // fewer than five matches without the top-up.
+      for (const p of [0, 0.05, 0.3]) {
+        const seq = generateSequence(25, n, INGREDIENTS, p, random);
+        const matches = seq.filter((s) => s.isMatch).length;
+        expect(matches, `seed ${seed}, p ${p}`).toBeGreaterThanOrEqual(
+          Math.min(5, 25 - n)
+        );
+      }
+    }
+  });
 });
