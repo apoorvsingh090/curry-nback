@@ -239,9 +239,15 @@ From the external QA report, the following observations are recorded here as
 deliberate non-changes for the MVP; each has a tracking issue in the
 repository:
 
-- **O-1** — a visible banner when history was lost from storage (the
-  monotonic `syncUnlocks` mitigates the unlock half only).
-- **O-2** — reluctance to drop theSticky Brain Score vocabulary this late.
-- **O-3** — the +1 "Sessions" counter only ticks on finished rounds.
-- **O-6** — speaker toggle is not exposed under the iOS status bar.
-- **O-7** — survivors of storage wipes are not auto-restored from a backup.
+- **O-1** — IndexedDB save failures currently end at a friendly but final
+  "not found" card: no banner saying progress could not be saved on this
+  device, and no in-memory fallback for the just-played round (the unlock
+  demote half is fixed; see issue #9).
+- **O-2** — "Brain Score" is exactly accuracy (`round(accuracy * 100)`); the
+  point economy during play affects no headline number (issue #10).
+- **O-3** — reaction times include the ~160ms card entrance animation
+  (issue #11).
+- **O-6** — the forgiving bottom-40% tap zone also catches accidental
+  touches such as grip adjustments (issue #12).
+- **O-7** — after a storage wipe session history is unrecoverable; a JSON
+  export is the cheapest insurance and is still missing (issue #13).
