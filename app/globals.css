@@ -65,3 +65,36 @@ body {
     user-select: none;
   }
 }
+
+/*
+ * Framer-free entrance animations for the game route: these keyframes replace
+ * the framer-motion card/toast transitions in GameScreen.tsx (~40KB gzipped
+ * off the /play route) and are covered by the reduced-motion block above.
+ */
+@keyframes card-pop {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.card-pop {
+  animation: card-pop 160ms ease-out both;
+}
+
+@keyframes toast-in {
+  from {
+    transform: translate(-50%, -12px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+.toast-in {
+  animation: toast-in 150ms ease-out both;
+}

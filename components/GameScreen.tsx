@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 import SpeakerToggle from "@/components/SpeakerToggle";
 import { INGREDIENTS, ingredientById } from "@/lib/ingredients";
 import {
@@ -84,6 +83,15 @@ export default function GameScreen() {
   const phaseRef = useRef<Phase>("starting");
   const sessionStartRef = useRef(Date.now());
   const feedbackIdRef = useRef(0);
+
+  // Overlay accessibility: while the quit/pause dialog is open, the frozen
+  // game behind it becomes inert and focus moves into the dialog (and
+  // bounces back to the trigger when it closes).
+  const headerRef = useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const actionRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const lastFocusRef = useRef<HTMLElement | null>(null);
 
   const setPhaseBoth = useCallback((next: Phase) => {
     phaseRef.current = next;
@@ -350,15 +358,36 @@ export default function GameScreen() {
   // Keyboard support: space or enter = MATCH.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === " " || event.key === "Enter") {
-        if (event.repeat) return;
-        event.preventDefault();
-        handleTap();
-      }
+      if (event.key !== " " && event.key !== "Enter") return;
+      if (event.repeat) return;
+      const target = event.target as HTMLElement | null;
+      // Buttons handle their own activation; stealing the key would
+      // block dialog buttons (Enter activates on keydown).
+      if (target && target.tagName === "BUTTON") return;
+      event.preventDefault();
+      handleTap();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleTap]);
+
+  // Park focus inside the dialog and make the background inert while a
+  // modal overlay is up (seniors/SR users otherwise tab to dead buttons).
+  const overlayOpen = Boolean(confirmQuit || paused);
+  useEffect(() => {
+    for (const el of [headerRef.current, mainRef.current, actionRef.current]) {
+      if (!el) continue;
+      if (overlayOpen) el.setAttribute("inert", "");
+      else el.removeAttribute("inert");
+    }
+    if (overlayOpen) {
+      lastFocusRef.current = document.activeElement as HTMLElement | null;
+      dialogRef.current?.querySelector<HTMLElement>("button")?.focus();
+    } else {
+      lastFocusRef.current?.focus();
+      lastFocusRef.current = null;
+    }
+  }, [overlayOpen]);
 
   // Rising toward 100% as the round completes (QA B-6: the last card now
   // reads 100%, not 96%).
@@ -390,7 +419,7 @@ export default function GameScreen() {
       className="fixed inset-0 flex select-none flex-col overflow-hidden bg-cream"
       onPointerDown={handleRootPointerDown}
     >
-      <header className="shrink-0">
+      <header ref={headerRef} className="shrink-0">
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 px-5 py-3">
           <div className="flex items-center gap-3">
             <button
@@ -427,82 +456,68 @@ export default function GameScreen() {
         </div>
       </header>
 
-      <main className="relative flex flex-1 flex-col items-center justify-center px-5 pb-4">
+      <main ref={mainRef} className="relative flex flex-1 flex-col items-center justify-center px-5 pb-4">
         <p className="sr-only" aria-live="polite">
           {card ? `Card: ${card.label}` : ""}
+          {feedback ? `. ${feedback.text}` : ""}
         </p>
 
-        <AnimatePresence mode="wait">
-          {card ? (
-            <motion.div
-              key={`${trialIndex}-${card.id}`}
-              initial={{ scale: 0.92, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.96, opacity: 0 }}
-              transition={{ duration: 0.16 }}
-              className={[
-                "flex aspect-square min-h-[240px] min-w-[240px] w-[min(78vw,320px)]",
-                "flex-col items-center justify-center rounded-[2rem] border-2 shadow-card",
-                feedback?.kind === "good"
-                  ? "border-success bg-success-soft"
-                  : "border-line bg-surface",
-              ].join(" ")}
+        {card ? (
+          <div
+            key={`${trialIndex}-${card.id}`}
+            className={[
+              "card-pop flex aspect-square min-h-[240px] min-w-[240px] w-[min(78vw,320px)]",
+              "flex-col items-center justify-center rounded-[2rem] border-2 shadow-card",
+              feedback?.kind === "good"
+                ? "border-success bg-success-soft"
+                : "border-line bg-surface",
+            ].join(" ")}
+          >
+            <span
+              aria-hidden="true"
+              data-testid="ingredient-emoji"
+              className="text-[7rem] leading-none"
             >
-              <span
-                aria-hidden="true"
-                data-testid="ingredient-emoji"
-                className="text-[7rem] leading-none"
-              >
-                {card.emoji}
-              </span>
-              <p
-                data-testid="ingredient-label"
-                className="mt-2 text-[2rem] font-bold leading-tight text-ink"
-              >
-                {card.label}
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex aspect-square min-h-[240px] min-w-[240px] w-[min(78vw,320px)] items-center justify-center rounded-[2rem] border-2 border-dashed border-line bg-surface/60"
+              {card.emoji}
+            </span>
+            <p
+              data-testid="ingredient-label"
+              className="mt-2 text-[2rem] font-bold leading-tight text-ink"
             >
-              <span aria-hidden="true" className="text-[4rem] opacity-40">
-                🥣
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              {card.label}
+            </p>
+          </div>
+        ) : (
+          <div
+            key="empty"
+            className="flex aspect-square min-h-[240px] min-w-[240px] w-[min(78vw,320px)] items-center justify-center rounded-[2rem] border-2 border-dashed border-line bg-surface/60"
+          >
+            <span aria-hidden="true" className="text-[4rem] opacity-40">
+              🥣
+            </span>
+          </div>
+        )}
 
-        <AnimatePresence>
-          {feedback ? (
-            <motion.div
-              key={feedback.id}
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.15 }}
-              className={`absolute top-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full px-8 py-3 text-[1.5rem] font-bold shadow-card ${
-                feedback.kind === "good"
-                  ? "animate-pulse-good bg-success-soft text-success"
-                  : "animate-shake-soft bg-white text-ink"
-              }`}
-            >
-              <span>{feedback.text}</span>
-              {feedback.points < 0 ? (
-                <span className="text-[1.25rem] font-bold text-muted">
-                  {feedback.points}
-                </span>
-              ) : null}
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+        {feedback ? (
+          <div
+            key={feedback.id}
+            className={`toast-in absolute top-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full px-8 py-3 text-[1.5rem] font-bold shadow-card ${
+              feedback.kind === "good"
+                ? "animate-pulse-good bg-success-soft text-success"
+                : "animate-shake-soft bg-white text-ink"
+            }`}
+          >
+            <span>{feedback.text}</span>
+            {feedback.points < 0 ? (
+              <span className="text-[1.25rem] font-bold text-muted">
+                {feedback.points}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </main>
 
-      <div className="shrink-0 px-5 pb-5">
+      <div ref={actionRef} className="shrink-0 px-5 pb-5">
         <button
           type="button"
           onClick={handleTap}
@@ -515,6 +530,7 @@ export default function GameScreen() {
 
       {confirmQuit || paused ? (
         <div
+          ref={dialogRef}
           className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-6 bg-cream/95 px-6 text-center"
           role="dialog"
           aria-modal="true"

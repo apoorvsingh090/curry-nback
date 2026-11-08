@@ -5,7 +5,18 @@ const withPWA = withPWAInit({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
-  buildExcludes: [/middleware-manifest\.json$/],
+  // Splash screens are consumed transiently by iOS at launch
+  // (AppleStartupImages) — precaching them only bloats the offline install
+  // (~108KB, ~25% of the precache).
+  publicExcludes: ["!noprecache/**/*", "!icons/splash-*.png"],
+  workboxOptions: {
+    exclude: [
+      /\/_next\/static\/.*(?<!\.p)\.woff2/,
+      /\.map$/,
+      /^manifest.*\.js$/,
+      /middleware-manifest\.json$/,
+    ],
+  },
 });
 
 /** @type {import('next').NextConfig} */
