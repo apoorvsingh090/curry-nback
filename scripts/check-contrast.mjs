@@ -11,17 +11,32 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 
-/** The palette lives in tailwind.config.ts — read it from there. */
-const tailwindConfig = readFileSync(join(root, "tailwind.config.ts"), "utf8");
+/** The palette lives in app/globals.css (@theme) — read it from there.
+ * Keep the --color-* lines in plain `--color-name: #RRGGBB;` form so this
+ * parser keeps working. */
+const globalsCss = readFileSync(join(root, "app", "globals.css"), "utf8");
 const colors = {};
-const colorBlock = tailwindConfig.match(/colors:\s*{([\s\S]*?)\n      },\n      fontFamily/);
-if (!colorBlock) {
-  console.error("Could not parse the palette from tailwind.config.ts");
+const themeStart = globalsCss.indexOf("@theme");
+let depth = 0;
+let themeEnd = -1;
+for (let i = themeStart; i >= 0 && i < globalsCss.length; i++) {
+  if (globalsCss[i] === "{") depth++;
+  else if (globalsCss[i] === "}") {
+    depth--;
+    if (depth === 0) {
+      themeEnd = i;
+      break;
+    }
+  }
+}
+if (themeStart < 0 || themeEnd < 0) {
+  console.error("Could not parse the @theme block from app/globals.css");
   process.exit(1);
 }
-for (const line of colorBlock[1].split("\n")) {
-  const match = line.match(/^\s*(?:"([^"]+)"|([a-zA-Z][\w-]*)):\s*"(#[0-9A-Fa-f]{6})"/);
-  if (match) colors[match[1] ?? match[2]] = match[3];
+const themeBody = globalsCss.slice(themeStart, themeEnd);
+for (const line of themeBody.split("\n")) {
+  const match = line.match(/^\s*--color-([a-z0-9-]+):\s*(#[0-9A-Fa-f]{6})\s*;/);
+  if (match) colors[match[1]] = match[2];
 }
 
 function hexToRgb(hex) {

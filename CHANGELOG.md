@@ -6,6 +6,14 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Tailwind CSS v3 → v4: PostCSS plugin is now `@tailwindcss/postcss`, and
+  the design tokens moved from `tailwind.config.ts` (deleted) into a CSS
+  `@theme` block in `app/globals.css`, which is the new single source of
+  truth — `scripts/check-contrast.mjs` reads the palette from there.
+  Production screenshots before/after are pixel-identical.
+
 ### Added
 
 - The difficulty ladder now runs to **Level 9 (9-back)**: six new levels

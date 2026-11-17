@@ -1,6 +1,54 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/*
+ * Design tokens (Tailwind v4): the palette, type scale, radii, shadows and
+ * animations that used to live in tailwind.config.ts now live here, so this
+ * file is the single source of truth. scripts/check-contrast.mjs reads the
+ * --color-* lines below — keep them as plain `name: #RRGGBB` declarations.
+ */
+@theme {
+  --color-cream: #FFF6EC;
+  --color-surface: #FFFFFF;
+  --color-ink: #2B1A0E;
+  --color-ink-soft: #5B4632;
+  --color-brand: #9A3412;
+  --color-brand-deep: #7C2D12;
+  --color-brand-soft: #FBE6D6;
+  --color-success: #166534;
+  --color-success-soft: #DCFCE7;
+  --color-amber: #B45309;
+  --color-amber-soft: #FEF3C7;
+  --color-muted: #6B6257;
+  --color-line: #A2855F;
+
+  --font-sans: var(--font-atkinson), system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+
+  --radius-xl2: 1.25rem;
+
+  --shadow-card: 0 12px 32px rgba(44, 26, 14, 0.12);
+  --shadow-button: 0 6px 0 0 #7C2D12;
+  --shadow-button-sm: 0 4px 0 0 #7C2D12;
+
+  --animate-pulse-good: pulse-good 600ms ease-in-out;
+  --animate-shake-soft: shake-soft 400ms ease-in-out;
+  --animate-pop-in: pop-in 200ms ease-out;
+
+  @keyframes pulse-good {
+    0% { transform: scale(1); background-color: #DCFCE7; }
+    50% { transform: scale(1.04); background-color: #BBF7D0; }
+    100% { transform: scale(1); background-color: #DCFCE7; }
+  }
+  @keyframes shake-soft {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+  @keyframes pop-in {
+    0% { transform: scale(0.92); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+}
 
 :root {
   --background: #fff6ec;
